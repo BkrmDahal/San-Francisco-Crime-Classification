@@ -1,0 +1,59 @@
+---
+title: "San Francisco Crime Classification"
+author: "Bikram Dahal"
+date: "March 5, 2016"
+output: html_document
+---
+
+
+# San Francisco Crime Classification
+
+#### Let load all required package and read train CSV
+
+
+```{r, out.height= 900, out.width=600, warning=FALSE}
+#################load required package
+
+suppressPackageStartupMessages(require("dplyr"))
+suppressPackageStartupMessages(require("readr"))
+suppressPackageStartupMessages(require("ggmap"))
+suppressPackageStartupMessages(require("leaflet"))
+currentDate = Sys.Date()
+
+#########Set the file dir
+
+setwd("E:/R_Script")
+filepath=getwd()
+setwd(paste(filepath, "Input", sep="/"))
+
+
+##read file
+train_2 = read_csv("train.csv")
+
+```
+
+#### As dataset is large lets make a subset
+
+
+```{r out.height= 600, out.width=900}
+##let get sample of 
+train = sample_n(train_2, 10000)
+train$dummy=1
+train= train %>% group_by(X,Y, Category) %>% summarise(no_sum=sum(dummy))
+train1 <-train[which(train$Category=="ASSAULT"),]
+train2 <-train[which(train$Category=="DRUG/NARCOTIC"),]
+
+map <- leaflet() %>%setView(lat = 37.7833, lng=-122.4167,  zoom = 13) %>%
+  addTiles(group = "OSM (default)") %>%
+  addProviderTiles("Stamen.Toner", group = "Toner") %>%
+  addProviderTiles("Stamen.TonerLite", group = "Toner Lite") %>%
+  # Overlay groups
+  addCircles(data=train1,lng = ~X, lat =~Y, radius  = ~sqrt(no_sum)*5, stroke = T, group = "ASSAULT") %>%
+  addCircles(data = train2, lng = ~X, lat = ~Y, radius =~sqrt(no_sum)*5, stroke = T,color = "red" ,group = "DRUG/NARCOTIC") %>%
+  addLayersControl(
+    baseGroups = c("OSM (default)", "Toner", "Toner Lite"),
+    overlayGroups = c("ASSAULT", "DRUG/NARCOTIC"),
+    options = layersControlOptions(collapsed = FALSE)
+  )
+map
+```
